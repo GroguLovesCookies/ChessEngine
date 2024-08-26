@@ -68,6 +68,8 @@ class ChessMove(Move):
         elif self.move_type == ChessMove.MT_CASTLE_LONG:
             return "O-O-O"
 
+        if self.piece_moved == 0:
+            return ""
         moved = reverse_chess_pieces[get_piece_value(self.piece_moved)]
         moved = "" if moved == "p" else moved.upper()
 

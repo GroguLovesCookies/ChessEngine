@@ -6,4 +6,3 @@ parser = ChessParser()
 board = parser.load("R7/8/8/3q4/8/8/8/8")
 
 gen = ChessMoveGenerator(board)
-print(gen.generate())

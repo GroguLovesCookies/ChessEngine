@@ -17,8 +17,8 @@ class MoveGenerator:
             x: int = 0
             for piece in row:
                 if piece == 0:
+                    x += 1
                     continue
-                print(is_white_piece(piece) == white)
                 if get_piece_value(piece) in self.generators.keys() and is_white_piece(piece) == white:
                     moves.extend(self.generators[get_piece_value(piece)](self.board, (x, y)))
                 x += 1

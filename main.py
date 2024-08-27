@@ -2,7 +2,8 @@ from fen_parsers.chess_parser import ChessParser
 from move_generators.chess_move_generator import ChessMoveGenerator
 
 parser = ChessParser()
-board = parser.load("8/8/3p4/8/4N3/21311/8/8")
+board = parser.load("8/1p4p1/5p2/3p2P1/3P1P2/8/6P1/8")
 
 gen = ChessMoveGenerator(board)
 print(gen.generate())
+print(gen.generate(False))

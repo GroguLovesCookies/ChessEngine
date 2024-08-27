@@ -1,7 +1,7 @@
 from classes.board import Board
 from move_generators.move_generator import MoveGenerator
 from moves.chess_move import ChessMove
-from pieces import chess_pieces, get_piece_value, get_piece_color
+from pieces import chess_pieces, get_piece_value, get_piece_color, is_white_piece
 from typing import List
 
 
@@ -76,7 +76,31 @@ def generate_king_moves(board: Board, coords: tuple) -> List[ChessMove]:
     return moves
 
 def generate_pawn_moves(board: Board, coords: tuple) -> List[ChessMove]:
-    return []
+    moves: List[ChessMove] = []
+
+    direction: int = -1 if is_white_piece(board[coords]) else 1
+    distance_index: int = 2 if direction == 1 else 6
+    distances: List[int] = board.get_distances(coords)
+    distance: int = distances[distance_index]
+
+    max_move_distance = min(distance, 2 if distance < 7 else 3)
+    for t in range(1, max_move_distance):
+        target: tuple = (coords[0], coords[1] + direction * t)
+        if board[target] != 0:
+            break
+        moves.append(ChessMove(board, coords, target))
+
+    if distance > 0:
+        if distances[4] > 1:
+            capture_target = (coords[0] - 1, coords[1] + direction)
+            if get_piece_color(board[capture_target]) != get_piece_color(board[coords]):
+                moves.append(ChessMove(board, coords, capture_target))
+        if distances[0] > 1:
+            capture_target = (coords[0] + 1, coords[1] + direction)
+            if get_piece_color(board[capture_target]) != get_piece_color(board[coords]):
+                moves.append(ChessMove(board, coords, capture_target))
+
+    return moves
 
 class ChessMoveGenerator(MoveGenerator):
     generators = {

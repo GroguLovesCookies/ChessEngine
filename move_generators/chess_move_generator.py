@@ -93,11 +93,11 @@ def generate_pawn_moves(board: Board, coords: tuple) -> List[ChessMove]:
     if distance > 0:
         if distances[4] > 1:
             capture_target = (coords[0] - 1, coords[1] + direction)
-            if get_piece_color(board[capture_target]) != get_piece_color(board[coords]):
+            if board[capture_target] != 0 and get_piece_color(board[capture_target]) != get_piece_color(board[coords]):
                 moves.append(ChessMove(board, coords, capture_target))
         if distances[0] > 1:
             capture_target = (coords[0] + 1, coords[1] + direction)
-            if get_piece_color(board[capture_target]) != get_piece_color(board[coords]):
+            if board[capture_target] != 0 and get_piece_color(board[capture_target]) != get_piece_color(board[coords]):
                 moves.append(ChessMove(board, coords, capture_target))
 
     return moves

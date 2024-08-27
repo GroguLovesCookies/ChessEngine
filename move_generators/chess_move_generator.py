@@ -88,7 +88,13 @@ def generate_pawn_moves(board: Board, coords: tuple) -> List[ChessMove]:
         target: tuple = (coords[0], coords[1] + direction * t)
         if board[target] != 0:
             break
-        moves.append(ChessMove(board, coords, target))
+        if distance == 2:
+            moves.append(ChessMove(board, coords, target, ChessMove.MT_PROMOTE_QUEEN))
+            moves.append(ChessMove(board, coords, target, ChessMove.MT_PROMOTE_ROOK))
+            moves.append(ChessMove(board, coords, target, ChessMove.MT_PROMOTE_BISHOP))
+            moves.append(ChessMove(board, coords, target, ChessMove.MT_PROMOTE_KNIGHT))
+        else:
+            moves.append(ChessMove(board, coords, target))
 
     if distance > 0:
         if distances[4] > 1:

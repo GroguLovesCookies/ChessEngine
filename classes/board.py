@@ -24,3 +24,15 @@ class Board:
         if self.i > self.height:
             raise StopIteration
         return self[self.i-1]
+
+    def get_distances(self, coords):
+        return [
+            self.width - coords[0],
+            min(self.width - coords[0], self.height - coords[1]),
+            self.height - coords[1],
+            min(coords[0] + 1, self.height - coords[1]),
+            coords[0] + 1,
+            min(coords[0] + 1, coords[1] + 1),
+            coords[1] + 1,
+            min(self.width - coords[0], coords[1] + 1)
+        ]

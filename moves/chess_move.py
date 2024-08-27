@@ -74,7 +74,7 @@ class ChessMove(Move):
         moved = "" if moved == "p" else moved.upper()
 
         target_file = ascii_lowercase[self.end[0]]
-        target_rank = self.end[1] + 1
+        target_rank = 8 - self.end[1]
         out: str = f"{moved}{target_file}{target_rank}"
 
         if self.move_type == ChessMove.MT_PROMOTE_QUEEN:

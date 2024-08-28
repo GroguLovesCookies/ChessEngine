@@ -1,7 +1,7 @@
 from classes.board import Board
 from move_generators.move_generator import MoveGenerator
 from moves.chess_move import ChessMove
-from pieces import chess_pieces, get_piece_value, get_piece_color, is_white_piece, is_same_color
+from pieces import chess_pieces, get_piece_value, get_piece_color, is_white_piece, is_same_color, is_empty
 from typing import List
 
 
@@ -45,16 +45,17 @@ def generate_knight_moves(board: Board, coords: tuple) -> List[ChessMove]:
         else:
             if distances[4] >= 2:
                 end = (branch_coord[0] - 1, branch_coord[1])
-        if not is_same_color(board[end], board[coords]):
+        if end is not None and not is_same_color(board[end], board[coords]):
             moves.append(ChessMove(board, coords, end))
 
+        end = None
         if offset[0] != 0:
             if distances[2] >= 2:
                 end = (branch_coord[0], branch_coord[1] + 1)
         else:
             if distances[0] >= 2:
                 end = (branch_coord[0] + 1, branch_coord[1])
-        if not is_same_color(board[end], board[coords]):
+        if end is not None and not is_same_color(board[end], board[coords]):
             moves.append(ChessMove(board, coords, end))
     return moves
 
@@ -72,6 +73,23 @@ def generate_king_moves(board: Board, coords: tuple) -> List[ChessMove]:
             if is_same_color(board[coords], board[target_coord]):
                 break
             moves.append(ChessMove(board, coords, target_coord))
+
+    rank: int = 7 if is_white_piece(board[coords]) else 0
+    if coords != (4, rank):
+        return moves
+
+    if board.castling[0 if rank == 7 else 2]:
+        if get_piece_value(board[(0, rank)]) == chess_pieces["r"] and \
+            is_empty(board[(1, rank)]) and \
+            is_empty(board[(2, rank)]) and \
+            is_empty(board[(3, rank)]):
+                moves.append(ChessMove(board, coords, coords, ChessMove.MT_CASTLE_LONG))
+
+    if board.castling[1 if rank == 7 else 3]:
+        if get_piece_value(board[(7, rank)]) == chess_pieces["r"] and \
+            is_empty(board[(6, rank)]) and \
+            is_empty(board[(5, rank)]):
+                moves.append(ChessMove(board, coords, coords, ChessMove.MT_CASTLE_SHORT))
 
     return moves
 

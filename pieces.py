@@ -17,3 +17,6 @@ def get_piece_color(piece: int):
 
 def is_white_piece(piece: int):
     return get_piece_color(piece) == 0b10000
+
+def is_same_color(piece1: int, piece2: int):
+    return piece1 != 0 and piece2 != 0 and get_piece_color(piece1) == get_piece_color(piece2)

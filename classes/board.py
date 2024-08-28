@@ -4,6 +4,20 @@ class Board:
         self.height = height
         self.board = [[0 for _ in range(width)] for _ in range(height)]
         self.i = 0
+        self.ep_square = None
+        self.castling = [True, True, True, True]
+
+        self.ep_stack = []
+        self.castle_stack = []
+
+    def reset_rights(self):
+        self.ep_stack.append(self.ep_square)
+        self.ep_square = None
+        self.castle_stack.append(self.castling[:])
+
+    def restore_rights(self):
+        self.ep_square = self.ep_stack.pop(-1)
+        self.castling = self.castle_stack.pop(-1)
 
     def __getitem__(self, item):
         if type(item) == int:

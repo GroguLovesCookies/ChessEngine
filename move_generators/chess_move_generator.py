@@ -1,7 +1,7 @@
 from classes.board import Board
 from move_generators.move_generator import MoveGenerator
 from moves.chess_move import ChessMove
-from pieces import chess_pieces, get_piece_value, get_piece_color, is_white_piece
+from pieces import chess_pieces, get_piece_value, get_piece_color, is_white_piece, is_same_color
 from typing import List
 
 
@@ -21,7 +21,7 @@ def generate_sliding_moves(board: Board, coords: tuple) -> List[ChessMove]:
         for t in range(1, distances[i]):
             target_coord: tuple = (coords[0] + offset[0] * t, coords[1] + offset[1] * t)
             piece_at_coord: int = board[target_coord]
-            if get_piece_color(board[coords]) == get_piece_color(piece_at_coord):
+            if is_same_color(board[coords], piece_at_coord):
                 break
             moves.append(ChessMove(board, coords, target_coord))
             if piece_at_coord != 0:
@@ -45,7 +45,7 @@ def generate_knight_moves(board: Board, coords: tuple) -> List[ChessMove]:
         else:
             if distances[4] >= 2:
                 end = (branch_coord[0] - 1, branch_coord[1])
-        if board[end] == 0 or get_piece_color(board[end]) != get_piece_color(board[coords]):
+        if not is_same_color(board[end], board[coords]):
             moves.append(ChessMove(board, coords, end))
 
         if offset[0] != 0:
@@ -54,7 +54,7 @@ def generate_knight_moves(board: Board, coords: tuple) -> List[ChessMove]:
         else:
             if distances[0] >= 2:
                 end = (branch_coord[0] + 1, branch_coord[1])
-        if board[end] == 0 or get_piece_color(board[end]) != get_piece_color(board[coords]):
+        if not is_same_color(board[end], board[coords]):
             moves.append(ChessMove(board, coords, end))
     return moves
 
@@ -69,7 +69,7 @@ def generate_king_moves(board: Board, coords: tuple) -> List[ChessMove]:
         offset = offsets[i]
         for t in range(1, min(distances[i], 2)):
             target_coord: tuple = (coords[0] + offset[0] * t, coords[1] + offset[1] * t)
-            if get_piece_color(board[coords]) == get_piece_color(board[target_coord]):
+            if is_same_color(board[coords], board[target_coord]):
                 break
             moves.append(ChessMove(board, coords, target_coord))
 
@@ -99,11 +99,11 @@ def generate_pawn_moves(board: Board, coords: tuple) -> List[ChessMove]:
     if distance > 0:
         if distances[4] > 1:
             capture_target = (coords[0] - 1, coords[1] + direction)
-            if board[capture_target] != 0 and get_piece_color(board[capture_target]) != get_piece_color(board[coords]):
+            if not is_same_color(board[coords], board[capture_target]):
                 moves.append(ChessMove(board, coords, capture_target))
         if distances[0] > 1:
             capture_target = (coords[0] + 1, coords[1] + direction)
-            if board[capture_target] != 0 and get_piece_color(board[capture_target]) != get_piece_color(board[coords]):
+            if not is_same_color(board[coords], board[capture_target]):
                 moves.append(ChessMove(board, coords, capture_target))
 
     return moves

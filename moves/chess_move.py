@@ -18,12 +18,17 @@ class ChessMove(Move):
         self.move_type = move_type
 
     def make_move(self):
+        self.board.reset_rights()
         if self.move_type == ChessMove.MT_CASTLE_LONG:
             rank = 7 if self.is_white_move else 0
             self.board[(2, rank)] = self.board[(4, rank)]
             self.board[(4, rank)] = 0
             self.board[(3, rank)] = self.board[(0, rank)]
             self.board[(0, rank)] = 0
+
+            self.board.castling[0 if self.is_white_move else 2] = False
+            self.board.castling[1 if self.is_white_move else 3] = False
+
             return
         elif self.move_type == ChessMove.MT_CASTLE_SHORT:
             rank = 7 if self.is_white_move else 0
@@ -31,6 +36,10 @@ class ChessMove(Move):
             self.board[(4, rank)] = 0
             self.board[(5, rank)] = self.board[(7, rank)]
             self.board[(7, rank)] = 0
+
+            self.board.castling[0 if self.is_white_move else 2] = False
+            self.board.castling[1 if self.is_white_move else 3] = False
+
             return
         self.board[self.start] = 0
         self.board[self.end] = self.piece_moved
@@ -43,7 +52,19 @@ class ChessMove(Move):
         elif self.move_type == ChessMove.MT_PROMOTE_KNIGHT:
             self.board[self.end] = chess_pieces["n"] | get_piece_color(self.piece_moved)
 
+        if get_piece_value(self.piece_moved) == chess_pieces["k"]:
+            self.board.castling[0 if self.is_white_move else 2] = False
+            self.board.castling[1 if self.is_white_move else 3] = False
+
+        if get_piece_value(self.piece_moved) == chess_pieces["r"]:
+            if self.start[0] == 0:
+                self.board.castling[0 if self.is_white_move else 2] = False
+            elif self.start[0] == 7:
+                self.board.castling[1 if self.is_white_move else 3] = False
+
+
     def undo_move(self):
+        self.board.restore_rights()
         if self.move_type == ChessMove.MT_CASTLE_LONG:
             rank = 7 if self.is_white_move else 0
             self.board[(4, rank)] = self.board[(2, rank)]

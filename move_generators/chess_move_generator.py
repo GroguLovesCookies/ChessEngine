@@ -1,9 +1,11 @@
 from classes.board import Board
 from move_generators.move_generator import MoveGenerator
 from moves.chess_move import ChessMove
+from moves.move import Move
 from pieces import chess_pieces, get_piece_value, get_piece_color, is_white_piece, is_same_color, is_empty
 from typing import List
 
+from utils import any_in_list
 
 offsets = [(1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1), (1, -1)]
 def generate_sliding_moves(board: Board, coords: tuple) -> List[ChessMove]:
@@ -83,13 +85,13 @@ def generate_king_moves(board: Board, coords: tuple) -> List[ChessMove]:
             is_empty(board[(1, rank)]) and \
             is_empty(board[(2, rank)]) and \
             is_empty(board[(3, rank)]):
-                moves.append(ChessMove(board, coords, coords, ChessMove.MT_CASTLE_LONG))
+                moves.append(ChessMove(board, coords, (coords[0], coords[1] + 1), ChessMove.MT_CASTLE_LONG))
 
     if board.castling[1 if rank == 7 else 3]:
         if get_piece_value(board[(7, rank)]) == chess_pieces["r"] and \
             is_empty(board[(6, rank)]) and \
             is_empty(board[(5, rank)]):
-                moves.append(ChessMove(board, coords, coords, ChessMove.MT_CASTLE_SHORT))
+                moves.append(ChessMove(board, coords, (coords[0], coords[1] + 1), ChessMove.MT_CASTLE_SHORT))
 
     return moves
 
@@ -140,4 +142,14 @@ class ChessMoveGenerator(MoveGenerator):
         chess_pieces["p"]: generate_pawn_moves
     }
 
+    def filter_legal_moves(self, moves: List[ChessMove]) -> List[ChessMove]:
+        filtered: List[ChessMove] = []
+        for move in moves:
+            move.make_move()
+            responses: List[ChessMove] = self.generate(not move.is_white_move, False)
+            can_take_king: ChessMove = any_in_list(responses, lambda x: get_piece_value(x.piece_taken) == chess_pieces["k"])
+            if can_take_king is None:
+                filtered.append(move)
+            move.undo_move()
+        return filtered
 

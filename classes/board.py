@@ -4,7 +4,7 @@ class Board:
         self.height = height
         self.board = [[0 for _ in range(width)] for _ in range(height)]
         self.i = 0
-        self.ep_square = None
+        self.ep_square = [None, None]
         self.castling = [True, True, True, True]
 
         self.ep_stack = []
@@ -12,7 +12,7 @@ class Board:
 
     def reset_rights(self):
         self.ep_stack.append(self.ep_square)
-        self.ep_square = None
+        self.ep_square = [None, None]
         self.castle_stack.append(self.castling[:])
 
     def restore_rights(self):

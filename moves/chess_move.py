@@ -12,6 +12,8 @@ class ChessMove(Move):
     MT_PROMOTE_ROOK = 4
     MT_PROMOTE_BISHOP = 5
     MT_PROMOTE_KNIGHT = 6
+    MT_DOUBLE_PUSH = 7
+    MT_EN_PASSANT = 8
 
     def __init__(self, board: Board, start: tuple, end: tuple, move_type: int = 0):
         super().__init__(board, start, end)
@@ -51,6 +53,13 @@ class ChessMove(Move):
             self.board[self.end] = chess_pieces["b"] | get_piece_color(self.piece_moved)
         elif self.move_type == ChessMove.MT_PROMOTE_KNIGHT:
             self.board[self.end] = chess_pieces["n"] | get_piece_color(self.piece_moved)
+        elif self.move_type == ChessMove.MT_DOUBLE_PUSH:
+            offset: int = 1 if self.is_white_move else -1
+            self.board.ep_square = ((self.end[0], self.end[1] + offset), self.end)
+        elif self.move_type == ChessMove.MT_EN_PASSANT:
+            ep_square = self.board.ep_square[-1]
+            if ep_square[0] is not None:
+                self.board[ep_square[1]] = 0
 
         if get_piece_value(self.piece_moved) == chess_pieces["k"]:
             self.board.castling[0 if self.is_white_move else 2] = False

@@ -112,17 +112,21 @@ def generate_pawn_moves(board: Board, coords: tuple) -> List[ChessMove]:
             moves.append(ChessMove(board, coords, target, ChessMove.MT_PROMOTE_BISHOP))
             moves.append(ChessMove(board, coords, target, ChessMove.MT_PROMOTE_KNIGHT))
         else:
-            moves.append(ChessMove(board, coords, target))
+            moves.append(ChessMove(board, coords, target, 0 if t == 1 else ChessMove.MT_DOUBLE_PUSH))
 
     if distance > 0:
         if distances[4] > 1:
             capture_target = (coords[0] - 1, coords[1] + direction)
             if not is_same_color(board[coords], board[capture_target]):
                 moves.append(ChessMove(board, coords, capture_target))
+            if capture_target == board.ep_square[0]:
+                moves.append(ChessMove(board, coords, capture_target, ChessMove.MT_EN_PASSANT))
         if distances[0] > 1:
             capture_target = (coords[0] + 1, coords[1] + direction)
             if not is_same_color(board[coords], board[capture_target]):
                 moves.append(ChessMove(board, coords, capture_target))
+            if capture_target == board.ep_square[0]:
+                moves.append(ChessMove(board, coords, capture_target, ChessMove.MT_EN_PASSANT))
 
     return moves
 

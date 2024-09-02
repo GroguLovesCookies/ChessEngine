@@ -85,13 +85,13 @@ def generate_king_moves(board: Board, coords: tuple) -> List[ChessMove]:
             is_empty(board[(1, rank)]) and \
             is_empty(board[(2, rank)]) and \
             is_empty(board[(3, rank)]):
-                moves.append(ChessMove(board, coords, (coords[0], coords[1] + 1), ChessMove.MT_CASTLE_LONG))
+                moves.append(ChessMove(board, coords, (coords[0] + 1, coords[1]), ChessMove.MT_CASTLE_LONG))
 
     if board.castling[1 if rank == 7 else 3]:
         if get_piece_value(board[(7, rank)]) == chess_pieces["r"] and \
             is_empty(board[(6, rank)]) and \
             is_empty(board[(5, rank)]):
-                moves.append(ChessMove(board, coords, (coords[0], coords[1] + 1), ChessMove.MT_CASTLE_SHORT))
+                moves.append(ChessMove(board, coords, (coords[0] + 1, coords[1]), ChessMove.MT_CASTLE_SHORT))
 
     return moves
 
@@ -119,13 +119,13 @@ def generate_pawn_moves(board: Board, coords: tuple) -> List[ChessMove]:
     if distance > 0:
         if distances[4] > 1:
             capture_target = (coords[0] - 1, coords[1] + direction)
-            if not is_same_color(board[coords], board[capture_target]):
+            if not is_same_color(board[coords], board[capture_target]) and board[capture_target] != 0:
                 moves.append(ChessMove(board, coords, capture_target))
             if capture_target == board.ep_square[0]:
                 moves.append(ChessMove(board, coords, capture_target, ChessMove.MT_EN_PASSANT))
         if distances[0] > 1:
             capture_target = (coords[0] + 1, coords[1] + direction)
-            if not is_same_color(board[coords], board[capture_target]):
+            if not is_same_color(board[coords], board[capture_target]) and board[capture_target] != 0:
                 moves.append(ChessMove(board, coords, capture_target))
             if capture_target == board.ep_square[0]:
                 moves.append(ChessMove(board, coords, capture_target, ChessMove.MT_EN_PASSANT))

@@ -57,7 +57,7 @@ class ChessMove(Move):
             offset: int = 1 if self.is_white_move else -1
             self.board.ep_square = ((self.end[0], self.end[1] + offset), self.end)
         elif self.move_type == ChessMove.MT_EN_PASSANT:
-            ep_square = self.board.ep_square[-1]
+            ep_square = self.board.ep_square
             if ep_square[0] is not None:
                 self.board[ep_square[1]] = 0
 

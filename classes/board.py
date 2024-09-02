@@ -6,6 +6,7 @@ class Board:
         self.i = 0
         self.ep_square = [None, None]
         self.castling = [True, True, True, True]
+        self.white = True
 
         self.ep_stack = []
         self.castle_stack = []
@@ -14,10 +15,12 @@ class Board:
         self.ep_stack.append(self.ep_square)
         self.ep_square = [None, None]
         self.castle_stack.append(self.castling[:])
+        self.white = not self.white
 
     def restore_rights(self):
         self.ep_square = self.ep_stack.pop(-1)
         self.castling = self.castle_stack.pop(-1)
+        self.white = not self.white
 
     def __getitem__(self, item):
         if type(item) == int:

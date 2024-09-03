@@ -8,7 +8,7 @@ from typing import List
 from utils import any_in_list
 
 offsets = [(1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1), (1, -1)]
-def generate_sliding_moves(board: Board, coords: tuple) -> List[ChessMove]:
+def generate_sliding_moves(board: Board, coords: tuple, only_captures: bool) -> List[ChessMove]:
     moves: List[ChessMove] = []
     distances: List[int] = board.get_distances(coords)
 
@@ -23,7 +23,7 @@ def generate_sliding_moves(board: Board, coords: tuple) -> List[ChessMove]:
         for t in range(1, distances[i]):
             target_coord: tuple = (coords[0] + offset[0] * t, coords[1] + offset[1] * t)
             piece_at_coord: int = board[target_coord]
-            if is_same_color(board[coords], piece_at_coord):
+            if is_same_color(board[coords], piece_at_coord) or (piece_at_coord != 0 and only_captures):
                 break
             moves.append(ChessMove(board, coords, target_coord))
             if piece_at_coord != 0:
@@ -32,7 +32,7 @@ def generate_sliding_moves(board: Board, coords: tuple) -> List[ChessMove]:
     return moves
 
 
-def generate_knight_moves(board: Board, coords: tuple) -> List[ChessMove]:
+def generate_knight_moves(board: Board, coords: tuple, _: bool) -> List[ChessMove]:
     moves: List[ChessMove] =  []
     distances: List[int] = board.get_distances(coords)
     for i in [0, 2, 4, 6]:
@@ -62,7 +62,7 @@ def generate_knight_moves(board: Board, coords: tuple) -> List[ChessMove]:
     return moves
 
 
-def generate_king_moves(board: Board, coords: tuple) -> List[ChessMove]:
+def generate_king_moves(board: Board, coords: tuple, _: bool) -> List[ChessMove]:
     moves: List[ChessMove] = []
     distances: List[int] = board.get_distances(coords)
 
@@ -95,7 +95,7 @@ def generate_king_moves(board: Board, coords: tuple) -> List[ChessMove]:
 
     return moves
 
-def generate_pawn_moves(board: Board, coords: tuple) -> List[ChessMove]:
+def generate_pawn_moves(board: Board, coords: tuple, only_captures: bool) -> List[ChessMove]:
     moves: List[ChessMove] = []
 
     direction: int = -1 if is_white_piece(board[coords]) else 1
@@ -103,32 +103,36 @@ def generate_pawn_moves(board: Board, coords: tuple) -> List[ChessMove]:
     distances: List[int] = board.get_distances(coords)
     distance: int = distances[distance_index]
 
-    max_move_distance = min(distance, 2 if distance < 7 else 3)
+    max_move_distance = 0 if only_captures else min(distance, 2 if distance < 7 else 3)
     for t in range(1, max_move_distance):
         target: tuple = (coords[0], coords[1] + direction * t)
         if board[target] != 0:
             break
-        if distance == 2:
-            moves.append(ChessMove(board, coords, target, ChessMove.MT_PROMOTE_QUEEN))
-            moves.append(ChessMove(board, coords, target, ChessMove.MT_PROMOTE_ROOK))
-            moves.append(ChessMove(board, coords, target, ChessMove.MT_PROMOTE_BISHOP))
-            moves.append(ChessMove(board, coords, target, ChessMove.MT_PROMOTE_KNIGHT))
         else:
             moves.append(ChessMove(board, coords, target, 0 if t == 1 else ChessMove.MT_DOUBLE_PUSH))
 
     if distance > 0:
         if distances[4] > 1:
             capture_target = (coords[0] - 1, coords[1] + direction)
-            if not is_same_color(board[coords], board[capture_target]) and board[capture_target] != 0:
+            if (not is_same_color(board[coords], board[capture_target]) and board[capture_target] != 0) or only_captures:
                 moves.append(ChessMove(board, coords, capture_target))
             if capture_target == board.ep_square[0]:
                 moves.append(ChessMove(board, coords, capture_target, ChessMove.MT_EN_PASSANT))
         if distances[0] > 1:
             capture_target = (coords[0] + 1, coords[1] + direction)
-            if not is_same_color(board[coords], board[capture_target]) and board[capture_target] != 0:
+            if (not is_same_color(board[coords], board[capture_target]) and board[capture_target] != 0) or only_captures:
                 moves.append(ChessMove(board, coords, capture_target))
             if capture_target == board.ep_square[0]:
                 moves.append(ChessMove(board, coords, capture_target, ChessMove.MT_EN_PASSANT))
+
+    if distance == 2 and not only_captures:
+        output = []
+        for move in moves:
+            output.append(ChessMove(board, coords, move.end, ChessMove.MT_PROMOTE_QUEEN))
+            output.append(ChessMove(board, coords, move.end, ChessMove.MT_PROMOTE_ROOK))
+            output.append(ChessMove(board, coords, move.end, ChessMove.MT_PROMOTE_BISHOP))
+            output.append(ChessMove(board, coords, move.end, ChessMove.MT_PROMOTE_KNIGHT))
+        return output
 
     return moves
 
@@ -145,11 +149,10 @@ class ChessMoveGenerator(MoveGenerator):
     def filter_legal_moves(self, moves: List[ChessMove]) -> List[ChessMove]:
         filtered: List[ChessMove] = []
         for move in moves:
-            move.make_move()
-            responses: List[ChessMove] = self.generate(not move.is_white_move, False)
-            can_take_king: ChessMove = any_in_list(responses, lambda x: get_piece_value(x.piece_taken) == chess_pieces["k"])
-            if can_take_king is None:
-                filtered.append(move)
-            move.undo_move()
+            if get_piece_value(move.piece_moved) == chess_pieces["k"]:
+                if move.end not in self.board.attacked_squares:
+                    filtered.append(move)
+                continue
+
         return filtered
 

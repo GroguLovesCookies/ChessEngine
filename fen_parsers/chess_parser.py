@@ -1,11 +1,12 @@
 from classes.board import Board
 from fen_parsers.fen_parser import FenParser
+from move_generators.chess_move_generator import ChessMoveGenerator
 from pieces import get_piece_value, is_white_piece
 
 
 class ChessParser(FenParser):
     def load(self, fen: str) -> Board:
-        board = Board(self.width, self.height)
+        board = Board(ChessMoveGenerator, self.width, self.height)
 
         i = 0
         for char in fen:
@@ -21,6 +22,7 @@ class ChessParser(FenParser):
                 board[(x, y)] = piece | colour
                 i += 1
 
+        board.reload_attacked()
         return board
 
     def save(self, board: Board) -> str:

@@ -1,5 +1,5 @@
 class Board:
-    def __init__(self, width=8, height=8):
+    def __init__(self, generator, width=8, height=8):
         self.width = width
         self.height = height
         self.board = [[0 for _ in range(width)] for _ in range(height)]
@@ -8,8 +8,16 @@ class Board:
         self.castling = [True, True, True, True]
         self.white = True
 
+        self.generator = generator(self)
+
         self.ep_stack = []
         self.castle_stack = []
+
+        self.attacked_squares = set()
+
+    def reload_attacked(self):
+        print(f"RELOAD {self.white}")
+        self.attacked_squares = set([i.end for i in self.generator.generate(not self.white, False, True)])
 
     def reset_rights(self):
         self.ep_stack.append(self.ep_square)

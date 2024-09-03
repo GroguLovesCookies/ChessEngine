@@ -70,6 +70,7 @@ class ChessMove(Move):
                 self.board.castling[0 if self.is_white_move else 2] = False
             elif self.start[0] == 7:
                 self.board.castling[1 if self.is_white_move else 3] = False
+        self.board.reload_attacked()
 
 
     def undo_move(self):
@@ -91,6 +92,7 @@ class ChessMove(Move):
 
         self.board[self.start] = self.piece_moved
         self.board[self.end] = self.piece_taken
+        self.board.reload_attacked()
 
     def __repr__(self):
         if self.move_type == ChessMove.MT_CASTLE_SHORT:
@@ -105,7 +107,9 @@ class ChessMove(Move):
 
         target_file = ascii_lowercase[self.end[0]]
         target_rank = 8 - self.end[1]
-        out: str = f"{moved}{target_file}{target_rank}"
+        start_file = ascii_lowercase[self.start[0]]
+        start_rank = 8 - self.start[1]
+        out: str = f"{start_file}{start_rank}{target_file}{target_rank}"
 
         if self.move_type == ChessMove.MT_PROMOTE_QUEEN:
             return out + "=Q"

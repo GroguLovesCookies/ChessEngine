@@ -1,14 +1,15 @@
+import json
+
 from classes.board import Board
 from move_generators.move_generator import MoveGenerator
 from moves.chess_move import ChessMove
-from moves.move import Move
-from pieces import chess_pieces, get_piece_value, get_piece_color, is_white_piece, is_same_color, is_empty
+from pieces import chess_pieces, get_piece_value, is_white_piece, is_same_color, is_empty
 from typing import List
 
-from utils import any_in_list
+from utils import print_bitboard
 
 offsets = [(1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1), (1, -1)]
-def generate_sliding_moves(board: Board, coords: tuple, only_captures: bool) -> List[ChessMove]:
+def generate_sliding_moves(board: Board, coords: tuple, only_captures: bool, collide: bool = True) -> List[ChessMove]:
     moves: List[ChessMove] = []
     distances: List[int] = board.get_distances(coords)
 
@@ -23,10 +24,10 @@ def generate_sliding_moves(board: Board, coords: tuple, only_captures: bool) -> 
         for t in range(1, distances[i]):
             target_coord: tuple = (coords[0] + offset[0] * t, coords[1] + offset[1] * t)
             piece_at_coord: int = board[target_coord]
-            if is_same_color(board[coords], piece_at_coord) or (piece_at_coord != 0 and only_captures):
+            if collide and (is_same_color(board[coords], piece_at_coord) or (piece_at_coord != 0 and only_captures)):
                 break
             moves.append(ChessMove(board, coords, target_coord))
-            if piece_at_coord != 0:
+            if piece_at_coord != 0 and collide:
                 break
 
     return moves
@@ -146,6 +147,12 @@ class ChessMoveGenerator(MoveGenerator):
         chess_pieces["p"]: generate_pawn_moves
     }
 
+    def __init__(self, board):
+        super().__init__(board)
+        with open("bitboards/move_lookup.json", "r") as f:
+            moves = json.loads(f.read())
+            self.rook_lookup = moves["r"]
+
     def filter_legal_moves(self, moves: List[ChessMove]) -> List[ChessMove]:
         filtered: List[ChessMove] = []
         for move in moves:
@@ -153,6 +160,6 @@ class ChessMoveGenerator(MoveGenerator):
                 if move.end not in self.board.attacked_squares:
                     filtered.append(move)
                 continue
-
+            filtered.append(move)
         return filtered
 

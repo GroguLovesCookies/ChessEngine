@@ -1,3 +1,7 @@
+from typing import List
+from pieces import chess_pieces
+
+
 class Board:
     def __init__(self, generator, width=8, height=8):
         self.width = width
@@ -14,10 +18,42 @@ class Board:
         self.castle_stack = []
 
         self.attacked_squares = set()
+        self.pinned_pieces = {}
+
+        self.kings = [(0, 0), (0, 0)]
+        self.white_bitboards = {piece: 0 for piece in chess_pieces.values()}
+        self.black_bitboards = {piece: 0 for piece in chess_pieces.values()}
+
+    @property
+    def white_bitboard(self):
+        out = 0
+        for bitboard in self.white_bitboards.values():
+            out |= bitboard
+        return out
+
+    @property
+    def black_bitboard(self):
+        out = 0
+        for bitboard in self.black_bitboards.values():
+            out |= bitboard
+        return out
+
+    def get_bitboard(self, white):
+        return self.white_bitboards if white else self.black_bitboards
 
     def reload_attacked(self):
-        print(f"RELOAD {self.white}")
-        self.attacked_squares = set([i.end for i in self.generator.generate(not self.white, False, True)])
+        ...# self.attacked_squares = set([i.end for i in self.generator.generate(not self.white, False, True)])
+
+    def reload_pinned(self):
+        offsets = [(1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1), (1, -1)]
+        coords: tuple = self.kings[0 if self.white else 1]
+        distances: List[int] = self.get_distances(coords)
+
+        use_offsets = range(8)
+        for i in use_offsets:
+            offset = offsets[i]
+            for t in range(1, distances[i]):
+                target_coord: tuple = (coords[0] + offset[0] * t, coords[1] + offset[1] * t)
 
     def reset_rights(self):
         self.ep_stack.append(self.ep_square)

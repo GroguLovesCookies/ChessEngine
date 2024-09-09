@@ -1,7 +1,7 @@
 from classes.board import Board
 from fen_parsers.fen_parser import FenParser
 from move_generators.chess_move_generator import ChessMoveGenerator
-from pieces import get_piece_value, is_white_piece
+from pieces import get_piece_value, is_white_piece, chess_pieces
 
 
 class ChessParser(FenParser):
@@ -20,6 +20,10 @@ class ChessParser(FenParser):
                 x = i % board.width
                 y = i // board.width
                 board[(x, y)] = piece | colour
+                bitboard = board.get_bitboard(char.isupper())
+                bitboard[piece]  |= 1 << (63 - i)
+                if char.lower() == "k":
+                    board.kings[0 if char.isupper() else 1] = (x, y)
                 i += 1
 
         board.reload_attacked()

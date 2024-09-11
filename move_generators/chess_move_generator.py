@@ -1,15 +1,34 @@
 import json
 
+from bitboards.generator import create_sliding_mask
 from classes.board import Board
 from move_generators.move_generator import MoveGenerator
 from moves.chess_move import ChessMove
 from pieces import chess_pieces, get_piece_value, is_white_piece, is_same_color, is_empty
 from typing import List
 
-from utils import print_bitboard
+from utils import print_bitboard, square_to_index
 
 offsets = [(1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1), (1, -1)]
 def generate_sliding_moves(board: Board, coords: tuple, only_captures: bool, collide: bool = True) -> List[ChessMove]:
+    out = 0
+    pieces = []
+    if get_piece_value(board[coords]) in [chess_pieces["r"], chess_pieces["q"]]:
+        pieces.append(chess_pieces["r"])
+    if get_piece_value(board[coords]) in [chess_pieces["b"], chess_pieces["q"]]:
+        pieces.append(chess_pieces["b"])
+    for piece in pieces:
+        lookup_table = board.generator.rook_lookup if piece == chess_pieces["r"] else board.generator.bishop_lookup
+        i = square_to_index(*coords)
+        mask = lookup_table["masks"][str(i)]
+        blockers = board.white_bitboard | board.black_bitboard
+        blockers &= mask
+        bitboard = board.white_bitboard if is_white_piece(board[coords]) else board.black_bitboard
+        moves_bitboard = lookup_table["moves"][str(i)][str(blockers)]
+        moves_bitboard &= ~bitboard
+        out |= moves_bitboard
+    print_bitboard(out)
+
     moves: List[ChessMove] = []
     distances: List[int] = board.get_distances(coords)
 
@@ -152,6 +171,7 @@ class ChessMoveGenerator(MoveGenerator):
         with open("bitboards/move_lookup.json", "r") as f:
             moves = json.loads(f.read())
             self.rook_lookup = moves["r"]
+            self.bishop_lookup = moves["b"]
 
     def filter_legal_moves(self, moves: List[ChessMove]) -> List[ChessMove]:
         filtered: List[ChessMove] = []

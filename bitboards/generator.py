@@ -2,14 +2,14 @@ import json
 from typing import List, Dict
 
 from classes.board import Board
-from move_generators.chess_move_generator import ChessMoveGenerator, offsets
+from move_generators.move_generator import MoveGenerator
 from moves.chess_move import ChessMove
 from pieces import get_piece_value, chess_pieces, is_same_color
 from utils import print_bitboard
 
-
+offsets = [(1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1), (1, -1)]
 def create_sliding_mask(x: int, y: int, piece: str) -> bin:
-    board = Board(ChessMoveGenerator)
+    board = Board(MoveGenerator)
     coords = (x, y)
     distances: List[int] = board.get_distances(coords)
     out: bin = 0
@@ -47,13 +47,17 @@ def create_all_blocker_bitboards(movement_mask: bin):
 
     return blocker_bitboards
 
-def generate_rook_legal_moves(x, y, blockers):
-    board = Board(ChessMoveGenerator)
+def generate_sliding_legal_moves(x, y, blockers, piece="r"):
+    board = Board(MoveGenerator)
     coords = (x, y)
     distances: List[int] = board.get_distances(coords)
     out: bin = 0
 
-    use_offsets = [0, 2, 4, 6]
+    use_offsets = range(8)
+    if piece == "r":
+        use_offsets = [0, 2, 4, 6]
+    elif piece == "b":
+        use_offsets = [1, 3, 5, 7]
 
     for i in use_offsets:
         offset = offsets[i]
@@ -67,22 +71,25 @@ def generate_rook_legal_moves(x, y, blockers):
 
     return out
 
-def create_rook_lookup_table():
+def create_sliding_lookup_table(piece="r"):
     rook_moves: Dict[int, Dict[bin, bin]] = {}
     for i in range(64):
         x = (63-i) % 8
         y = (63-i) // 8
-        movement_mask = create_sliding_mask(x, y, "r")
+        movement_mask = create_sliding_mask(x, y, piece)
         blocker_patterns = create_all_blocker_bitboards(movement_mask)
         cur_moves = {}
         for bitboard in blocker_patterns:
-            legal_bitboard = generate_rook_legal_moves(x, y, bitboard)
+            legal_bitboard = generate_sliding_legal_moves(x, y, bitboard, piece)
             cur_moves[bitboard] = legal_bitboard
         rook_moves[i] = cur_moves
 
     return rook_moves
 
-moves = create_rook_lookup_table()
-print_bitboard(moves[0][6])
-with open("move_lookup.json", "w") as f:
-    f.write(json.dumps({"r": {"masks": {i: create_sliding_mask((63-i) % 8, (63-i)//8, "r") for i in range(64)}, "moves": moves}}))
+if __name__ == "__main__":
+    moves = create_sliding_lookup_table()
+    dictionary = {"r": {"masks": {i: create_sliding_mask((63-i) % 8, (63-i)//8, "r") for i in range(64)}, "moves": moves}}
+    moves = create_sliding_lookup_table("b")
+    dictionary["b"] = {"masks": {i: create_sliding_mask((63-i) % 8, (63-i)//8, "b") for i in range(64)}, "moves": moves}
+    with open("move_lookup.json", "w") as f:
+        f.write(json.dumps(dictionary))

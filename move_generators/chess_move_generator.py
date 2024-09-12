@@ -1,13 +1,13 @@
 import json
+from unicodedata import lookup
 
-from bitboards.generator import create_sliding_mask
 from classes.board import Board
 from move_generators.move_generator import MoveGenerator
 from moves.chess_move import ChessMove
 from pieces import chess_pieces, get_piece_value, is_white_piece, is_same_color, is_empty
 from typing import List
 
-from utils import print_bitboard, square_to_index
+from utils import print_bitboard, square_to_index, bitboard_to_moves
 
 offsets = [(1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1), (1, -1)]
 def generate_sliding_moves(board: Board, coords: tuple, only_captures: bool, collide: bool = True) -> List[ChessMove]:
@@ -27,59 +27,16 @@ def generate_sliding_moves(board: Board, coords: tuple, only_captures: bool, col
         moves_bitboard = lookup_table["moves"][str(i)][str(blockers)]
         moves_bitboard &= ~bitboard
         out |= moves_bitboard
-    print_bitboard(out)
 
-    moves: List[ChessMove] = []
-    distances: List[int] = board.get_distances(coords)
-
-    use_offsets = range(8)
-    if get_piece_value(board[coords]) == chess_pieces["r"]:
-        use_offsets = [0, 2, 4, 6]
-    elif get_piece_value(board[coords]) == chess_pieces["b"]:
-        use_offsets = [1, 3, 5, 7]
-
-    for i in use_offsets:
-        offset = offsets[i]
-        for t in range(1, distances[i]):
-            target_coord: tuple = (coords[0] + offset[0] * t, coords[1] + offset[1] * t)
-            piece_at_coord: int = board[target_coord]
-            if collide and (is_same_color(board[coords], piece_at_coord) or (piece_at_coord != 0 and only_captures)):
-                break
-            moves.append(ChessMove(board, coords, target_coord))
-            if piece_at_coord != 0 and collide:
-                break
-
-    return moves
+    return bitboard_to_moves(out, coords, board, ChessMove)
 
 
 def generate_knight_moves(board: Board, coords: tuple, _: bool) -> List[ChessMove]:
-    moves: List[ChessMove] =  []
-    distances: List[int] = board.get_distances(coords)
-    for i in [0, 2, 4, 6]:
-        if distances[i] < 3:
-            continue
-        offset = offsets[i]
-        branch_coord = (coords[0] + offset[0] * 2, coords[1] + offset[1] * 2)
-        end = None
-        if offset[0] != 0:
-            if distances[6] >= 2:
-                end = (branch_coord[0], branch_coord[1] - 1)
-        else:
-            if distances[4] >= 2:
-                end = (branch_coord[0] - 1, branch_coord[1])
-        if end is not None and not is_same_color(board[end], board[coords]):
-            moves.append(ChessMove(board, coords, end))
-
-        end = None
-        if offset[0] != 0:
-            if distances[2] >= 2:
-                end = (branch_coord[0], branch_coord[1] + 1)
-        else:
-            if distances[0] >= 2:
-                end = (branch_coord[0] + 1, branch_coord[1])
-        if end is not None and not is_same_color(board[end], board[coords]):
-            moves.append(ChessMove(board, coords, end))
-    return moves
+    lookup_table = board.generator.knight_lookup
+    i = square_to_index(*coords)
+    mask = lookup_table["masks"][str(i)]
+    bitboard = mask & ~(board.white_bitboard if is_white_piece(board[coords]) else board.black_bitboard)
+    return bitboard_to_moves(bitboard, coords, board, ChessMove)
 
 
 def generate_king_moves(board: Board, coords: tuple, _: bool) -> List[ChessMove]:
@@ -172,6 +129,7 @@ class ChessMoveGenerator(MoveGenerator):
             moves = json.loads(f.read())
             self.rook_lookup = moves["r"]
             self.bishop_lookup = moves["b"]
+            self.knight_lookup = moves["n"]
 
     def filter_legal_moves(self, moves: List[ChessMove]) -> List[ChessMove]:
         filtered: List[ChessMove] = []

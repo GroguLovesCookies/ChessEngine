@@ -18,3 +18,10 @@ def square_to_index(x: int, y: int) -> int:
 
 def index_to_square(i: int):
     return (63-i) % 8, (63-i)//8
+
+def bitboard_to_moves(bitboard, start, board, move_type):
+    out = []
+    for i in range(64):
+        if (bitboard >> i) & 1 == 1:
+            out.append(move_type(board, start, index_to_square(i)))
+    return out

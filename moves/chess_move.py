@@ -3,7 +3,7 @@ from string import ascii_lowercase
 from classes.board import Board
 from moves.move import Move
 from pieces import chess_pieces, get_piece_color, reverse_chess_pieces, get_piece_value
-from utils import square_to_index, print_bitboard
+from utils import square_to_index
 
 
 class ChessMove(Move):

@@ -40,37 +40,11 @@ def generate_knight_moves(board: Board, coords: tuple, _: bool) -> List[ChessMov
 
 
 def generate_king_moves(board: Board, coords: tuple, _: bool) -> List[ChessMove]:
-    moves: List[ChessMove] = []
-    distances: List[int] = board.get_distances(coords)
-
-    use_offsets = range(8)
-
-    for i in use_offsets:
-        offset = offsets[i]
-        for t in range(1, min(distances[i], 2)):
-            target_coord: tuple = (coords[0] + offset[0] * t, coords[1] + offset[1] * t)
-            if is_same_color(board[coords], board[target_coord]):
-                break
-            moves.append(ChessMove(board, coords, target_coord))
-
-    rank: int = 7 if is_white_piece(board[coords]) else 0
-    if coords != (4, rank):
-        return moves
-
-    if board.castling[0 if rank == 7 else 2]:
-        if get_piece_value(board[(0, rank)]) == chess_pieces["r"] and \
-            is_empty(board[(1, rank)]) and \
-            is_empty(board[(2, rank)]) and \
-            is_empty(board[(3, rank)]):
-                moves.append(ChessMove(board, coords, (coords[0] + 1, coords[1]), ChessMove.MT_CASTLE_LONG))
-
-    if board.castling[1 if rank == 7 else 3]:
-        if get_piece_value(board[(7, rank)]) == chess_pieces["r"] and \
-            is_empty(board[(6, rank)]) and \
-            is_empty(board[(5, rank)]):
-                moves.append(ChessMove(board, coords, (coords[0] + 1, coords[1]), ChessMove.MT_CASTLE_SHORT))
-
-    return moves
+    lookup_table = board.generator.king_lookup
+    i = square_to_index(*coords)
+    mask = lookup_table["masks"][str(i)]
+    bitboard = mask & ~(board.white_bitboard if is_white_piece(board[coords]) else board.black_bitboard)
+    return bitboard_to_moves(bitboard, coords, board, ChessMove)
 
 def generate_pawn_moves(board: Board, coords: tuple, only_captures: bool) -> List[ChessMove]:
     moves: List[ChessMove] = []
@@ -130,6 +104,7 @@ class ChessMoveGenerator(MoveGenerator):
             self.rook_lookup = moves["r"]
             self.bishop_lookup = moves["b"]
             self.knight_lookup = moves["n"]
+            self.king_lookup = moves["k"]
 
     def filter_legal_moves(self, moves: List[ChessMove]) -> List[ChessMove]:
         filtered: List[ChessMove] = []

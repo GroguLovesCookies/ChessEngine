@@ -2,11 +2,11 @@ import json
 from typing import List, Dict
 
 from classes.board import Board
-from move_generators.chess_move_generator import generate_knight_moves
+from move_generators.chess_move_generator import generate_knight_moves, generate_king_moves
 from move_generators.move_generator import MoveGenerator
 from moves.chess_move import ChessMove
 from pieces import get_piece_value, chess_pieces, is_same_color
-from utils import print_bitboard, square_to_index
+from utils import print_bitboard, square_to_index, index_to_square
 
 offsets = [(1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1), (1, -1)]
 def create_sliding_mask(x: int, y: int, piece: str) -> bin:
@@ -93,6 +93,12 @@ def create_knight_mask(x, y):
         out |= 1 << square_to_index(*move.end)
     return out
 
+def create_king_mask(x, y):
+    out = 0
+    for move in generate_king_moves(Board(MoveGenerator),(x, y), False):
+        out |= 1 << square_to_index(*move.end)
+    return out
+
 def generate_knight_legal_moves(x, y, blockers):
     return create_knight_mask(x, y) & ~blockers
 
@@ -112,10 +118,11 @@ def create_knight_lookup_table():
     return knight_moves
 
 if __name__ == "__main__":
-    moves = create_sliding_lookup_table()
-    dictionary = {"r": {"masks": {i: create_sliding_mask((63-i) % 8, (63-i)//8, "r") for i in range(64)}, "moves": moves}}
-    moves = create_sliding_lookup_table("b")
-    dictionary["b"] = {"masks": {i: create_sliding_mask((63-i) % 8, (63-i)//8, "b") for i in range(64)}, "moves": moves}
-    dictionary["n"] = {"masks": {i: create_knight_mask((63-i) % 8, (63-i)//8) for i in range(64)}}
+    with open("move_lookup.json", "r") as f:
+        dictionary = json.loads(f.read())
     with open("move_lookup.json", "w") as f:
+        f.close()
+    with open("move_lookup.json", "r+") as f:
+        f.truncate(0)
+        dictionary["k"] = {"masks": {i: create_king_mask(*index_to_square(i)) for i in range(64)}}
         f.write(json.dumps(dictionary))

@@ -6,7 +6,7 @@ from pieces import chess_pieces
 from utils import print_bitboard
 
 parser = ChessParser()
-board = parser.load("8/1K2N21/8/8/4B3/8/8/7b")
+board = parser.load("3n4/1K2P2r/8/8/413/8/8/71")
 
 board.castling[2] = False
 board.castling[3] = False

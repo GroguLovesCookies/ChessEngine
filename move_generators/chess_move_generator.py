@@ -8,7 +8,7 @@ from pieces import chess_pieces, get_piece_value, is_white_piece, is_same_color,
     is_orthogonal_piece
 from typing import List
 
-from utils import print_bitboard, square_to_index, bitboard_to_moves
+from utils import print_bitboard, square_to_index, bitboard_to_moves, bitboard_to_pawn_moves
 
 offsets = [(1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1), (1, -1)]
 def generate_sliding_moves(board: Board, coords: tuple, only_captures: bool, collide: bool = True) -> List[ChessMove]:
@@ -59,38 +59,35 @@ def generate_pawn_moves(board: Board, coords: tuple, only_captures: bool) -> Lis
     distances: List[int] = board.get_distances(coords)
     distance: int = distances[distance_index]
 
+    bitboard = 0
+
     max_move_distance = 0 if only_captures else min(distance, 2 if distance < 7 else 3)
     for t in range(1, max_move_distance):
         target: tuple = (coords[0], coords[1] + direction * t)
         if board[target] != 0:
             break
         else:
-            moves.append(ChessMove(board, coords, target, 0 if t == 1 else ChessMove.MT_DOUBLE_PUSH))
+            bitboard |= 1 << square_to_index(*target)
+            # moves.append(ChessMove(board, coords, target, 0 if t == 1 else ChessMove.MT_DOUBLE_PUSH))
 
     if distance > 0:
         if distances[4] > 1:
             capture_target = (coords[0] - 1, coords[1] + direction)
             if (not is_same_color(board[coords], board[capture_target]) and board[capture_target] != 0) or only_captures:
-                moves.append(ChessMove(board, coords, capture_target))
+                bitboard |= 1 << square_to_index(*capture_target)
             if capture_target == board.ep_square[0]:
-                moves.append(ChessMove(board, coords, capture_target, ChessMove.MT_EN_PASSANT))
+                bitboard |= 1 << square_to_index(*capture_target)
         if distances[0] > 1:
             capture_target = (coords[0] + 1, coords[1] + direction)
             if (not is_same_color(board[coords], board[capture_target]) and board[capture_target] != 0) or only_captures:
-                moves.append(ChessMove(board, coords, capture_target))
+                bitboard |= 1 << square_to_index(*capture_target)
             if capture_target == board.ep_square[0]:
-                moves.append(ChessMove(board, coords, capture_target, ChessMove.MT_EN_PASSANT))
+                bitboard |= 1 << square_to_index(*capture_target)
 
-    if distance == 2 and not only_captures:
-        output = []
-        for move in moves:
-            output.append(ChessMove(board, coords, move.end, ChessMove.MT_PROMOTE_QUEEN))
-            output.append(ChessMove(board, coords, move.end, ChessMove.MT_PROMOTE_ROOK))
-            output.append(ChessMove(board, coords, move.end, ChessMove.MT_PROMOTE_BISHOP))
-            output.append(ChessMove(board, coords, move.end, ChessMove.MT_PROMOTE_KNIGHT))
-        return output
-
-    return moves
+    print_bitboard(bitboard)
+    print_bitboard(board.pins)
+    bitboard = filter_piece_moves(board, coords, bitboard)
+    return bitboard_to_pawn_moves(bitboard, coords, board, ChessMove, is_white_piece(board[coords]))
 
 def calculate_pins(board: Board, white: bool):
     king_coords = board.kings[0 if white else 1]

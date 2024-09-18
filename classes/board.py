@@ -11,6 +11,8 @@ class Board:
         self.ep_square = [None, None]
         self.castling = [True, True, True, True]
         self.white = True
+        self.pins = 0
+        self.pin_rays = [0 for _ in range(8)]
 
         self.generator = generator(self)
 
@@ -40,6 +42,14 @@ class Board:
 
     def get_bitboard(self, white):
         return self.white_bitboards if white else self.black_bitboards
+
+    def orthogonal_bitboards(self, white):
+        bitboards = self.get_bitboard(white)
+        return bitboards[chess_pieces["q"]] | bitboards[chess_pieces["r"]]
+
+    def diagonal_bitboards(self, white):
+        bitboards = self.get_bitboard(white)
+        return bitboards[chess_pieces["q"]] | bitboards[chess_pieces["b"]]
 
     def reload_attacked(self):
         ...# self.attacked_squares = set([i.end for i in self.generator.generate(not self.white, False, True)])

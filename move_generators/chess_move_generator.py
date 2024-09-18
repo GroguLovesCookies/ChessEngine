@@ -4,7 +4,8 @@ from unicodedata import lookup
 from classes.board import Board
 from move_generators.move_generator import MoveGenerator
 from moves.chess_move import ChessMove
-from pieces import chess_pieces, get_piece_value, is_white_piece, is_same_color, is_empty
+from pieces import chess_pieces, get_piece_value, is_white_piece, is_same_color, is_empty, is_diagonal_piece, \
+    is_orthogonal_piece
 from typing import List
 
 from utils import print_bitboard, square_to_index, bitboard_to_moves
@@ -28,6 +29,8 @@ def generate_sliding_moves(board: Board, coords: tuple, only_captures: bool, col
         moves_bitboard &= ~bitboard
         out |= moves_bitboard
 
+    print_bitboard(board.pins)
+    out = filter_piece_moves(board, coords, out)
     return bitboard_to_moves(out, coords, board, ChessMove)
 
 
@@ -36,6 +39,8 @@ def generate_knight_moves(board: Board, coords: tuple, _: bool) -> List[ChessMov
     i = square_to_index(*coords)
     mask = lookup_table["masks"][str(i)]
     bitboard = mask & ~(board.white_bitboard if is_white_piece(board[coords]) else board.black_bitboard)
+
+    bitboard = filter_piece_moves(board, coords, bitboard)
     return bitboard_to_moves(bitboard, coords, board, ChessMove)
 
 
@@ -87,6 +92,77 @@ def generate_pawn_moves(board: Board, coords: tuple, only_captures: bool) -> Lis
 
     return moves
 
+def calculate_pins(board: Board, white: bool):
+    king_coords = board.kings[0 if white else 1]
+    enemy_bitboards = board.black_bitboards if white else board.white_bitboards
+
+    board.pins = 0
+    board.pin_rays = []
+
+    use_offsets = []
+    distances = board.get_distances(king_coords)
+    if enemy_bitboards[chess_pieces["q"]] > 0:
+        use_offsets = range(8)
+    else:
+        if enemy_bitboards[chess_pieces["r"]] > 0:
+            use_offsets.extend([0, 2, 4, 6])
+        if enemy_bitboards[chess_pieces["b"]] > 0:
+            use_offsets.extend([1, 3, 5, 7])
+
+    for i in use_offsets:
+        offset = offsets[i]
+        diagonal = i % 2 == 1
+
+        lookup = board.generator.bishop_lookup if diagonal else board.generator.rook_lookup
+        slider_bitboards = board.diagonal_bitboards(not white) if diagonal else board.orthogonal_bitboards(not white)
+        king_ray_mask = lookup["masks"][str(square_to_index(*king_coords))]
+
+        if king_ray_mask & slider_bitboards == 0:
+            continue
+
+        distance = distances[i]
+        has_friendly_piece = False
+        ray_mask = 0
+        board.pin_rays.append(0)
+
+        for t in range(1, distance):
+            target_square = (king_coords[0] + t * offset[0], king_coords[1] + t * offset[1])
+            ray_mask |= 1 << square_to_index(*target_square)
+            piece = board[target_square]
+
+            if not is_empty(piece):
+                if is_white_piece(piece) == white:
+                    if not has_friendly_piece:
+                        has_friendly_piece = True
+                    else:
+                        break
+                else:
+                    piece_type = get_piece_value(piece)
+                    if (diagonal and is_diagonal_piece(piece_type)) or (not diagonal and is_orthogonal_piece(piece_type)):
+                        if has_friendly_piece:
+                            board.pins |= ray_mask
+                            board.pin_rays[-1] |= ray_mask
+                        break
+                    else:
+                        break
+
+def filter_piece_moves(board, coords, bitboard):
+    if is_pinned(board, *coords):
+        pin = find_pin_index(board, *coords)
+        print(pin)
+        if pin != 0:
+            return bitboard & pin
+    return bitboard
+
+def is_pinned(board, x, y):
+    return (board.pins >> square_to_index(x, y)) & 1 != 0
+
+def find_pin_index(board, x, y):
+    for i, pin in enumerate(board.pin_rays):
+        if (pin >> square_to_index(x, y)) & 1 != 0:
+            return pin
+    return -1
+
 class ChessMoveGenerator(MoveGenerator):
     generators = {
         chess_pieces["r"]: generate_sliding_moves,
@@ -106,6 +182,9 @@ class ChessMoveGenerator(MoveGenerator):
             self.knight_lookup = moves["n"]
             self.king_lookup = moves["k"]
 
+    def pre_generate(self):
+        calculate_pins(self.board, self.board.white)
+
     def filter_legal_moves(self, moves: List[ChessMove]) -> List[ChessMove]:
         filtered: List[ChessMove] = []
         for move in moves:
@@ -115,4 +194,3 @@ class ChessMoveGenerator(MoveGenerator):
                 continue
             filtered.append(move)
         return filtered
-

@@ -14,6 +14,10 @@ def print_bitboard(b):
 
 
 def square_to_index(x: int, y: int) -> int:
+    """
+
+    :rtype: object
+    """
     return 63 - (x + y * 8)
 
 def index_to_square(i: int):

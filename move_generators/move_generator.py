@@ -11,6 +11,7 @@ class MoveGenerator:
         self.board = board
 
     def generate(self, white:bool = True, do_filter:bool=True, only_captures:bool=False) -> List[Move]:
+        self.pre_generate()
         moves: List[Move] = []
         y: int = 0
         for row in self.board:
@@ -25,5 +26,11 @@ class MoveGenerator:
             y += 1
         return moves if not do_filter else self.filter_legal_moves(moves)
 
+    def pre_generate(self):
+        ...
+
     def filter_legal_moves(self, moves: List[Move]) -> List[Move]:
+        ...
+
+    def filter_piece_moves(self, coords, bitboard):
         ...

@@ -18,6 +18,12 @@ def get_piece_color(piece: int):
 def is_white_piece(piece: int):
     return get_piece_color(piece) == 0b10000
 
+def is_diagonal_piece(piece: int):
+    return piece == chess_pieces["b"] or piece == chess_pieces["q"]
+
+def is_orthogonal_piece(piece: int):
+    return piece == chess_pieces["r"] or piece == chess_pieces["q"]
+
 def is_empty(piece: int):
     return piece == 0
 

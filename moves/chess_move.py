@@ -21,7 +21,16 @@ class ChessMove(Move):
         self.move_type = move_type
 
     def make_move(self):
-        self.board.reset_rights()
+        if get_piece_value(self.piece_moved) == chess_pieces["p"] and self.end == self.board.ep_square[0]:
+            self.move_type = ChessMove.MT_EN_PASSANT
+
+        start_rank = 0b11111111 << (8 if self.is_white_move else 48)
+        target_rank = 0b11111111 << (24 if self.is_white_move else 32)
+        if get_piece_value(self.piece_moved) == chess_pieces["p"] and (
+            0b1 << square_to_index(*self.start) & start_rank != 0 and
+            0b1 << square_to_index(*self.end) & target_rank != 0
+        ):
+            self.move_type = ChessMove.MT_DOUBLE_PUSH
         bitboard = self.board.get_bitboard(self.is_white_move)
         enemy_bitboard = self.board.get_bitboard(not self.is_white_move)
         if self.move_type == ChessMove.MT_CASTLE_LONG:
@@ -79,13 +88,14 @@ class ChessMove(Move):
             self.board[self.end] = chess_pieces["n"] | get_piece_color(self.piece_moved)
             bitboard[chess_pieces["n"]] ^= 1 << square_to_index(*self.end)
         elif self.move_type == ChessMove.MT_DOUBLE_PUSH:
+            print("HI!")
             offset: int = 1 if self.is_white_move else -1
             self.board.ep_square = ((self.end[0], self.end[1] + offset), self.end)
         elif self.move_type == ChessMove.MT_EN_PASSANT:
             ep_square = self.board.ep_square
             if ep_square[0] is not None:
                 self.board[ep_square[1]] = 0
-                enemy_bitboard ^= 1 << square_to_index(*ep_square[1])
+                enemy_bitboard[chess_pieces["p"]] ^= 1 << square_to_index(*ep_square[1])
 
         if get_piece_value(self.piece_moved) == chess_pieces["k"]:
             self.board.castling[0 if self.is_white_move else 2] = False

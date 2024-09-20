@@ -6,11 +6,10 @@ from pieces import chess_pieces
 from utils import print_bitboard
 
 parser = ChessParser()
-board = parser.load("3n4/1K2P2r/8/8/413/8/8/71")
-
-board.castling[2] = False
-board.castling[3] = False
+board = parser.load("rnbqkbnr/1ppppppp/8/1P6/8/1p6/P7/K7")
 
 
+moves = board.generator.generate(True)
+print(parser.save(board))
 moves = board.generator.generate()
 print(moves)

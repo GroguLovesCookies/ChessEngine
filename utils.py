@@ -14,10 +14,6 @@ def print_bitboard(b):
 
 
 def square_to_index(x: int, y: int) -> int:
-    """
-
-    :rtype: object
-    """
     return 63 - (x + y * 8)
 
 def index_to_square(i: int):
@@ -32,7 +28,6 @@ def bitboard_to_moves(bitboard, start, board, move_type):
 
 def bitboard_to_pawn_moves(bitboard, start, board, move_type, white):
     promotion_rank = 0b11111111 << 56 if white else 0b11111111
-    print_bitboard(promotion_rank)
     out = bitboard_to_moves(bitboard & ~promotion_rank, start, board, move_type)
 
     for move in bitboard_to_moves(bitboard & promotion_rank, start, board, move_type):

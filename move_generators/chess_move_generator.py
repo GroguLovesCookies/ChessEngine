@@ -1,5 +1,4 @@
 import json
-from unicodedata import lookup
 
 from classes.board import Board
 from move_generators.move_generator import MoveGenerator
@@ -29,7 +28,6 @@ def generate_sliding_moves(board: Board, coords: tuple, only_captures: bool, col
         moves_bitboard &= ~bitboard
         out |= moves_bitboard
 
-    print_bitboard(board.pins)
     out = filter_piece_moves(board, coords, out)
     return bitboard_to_moves(out, coords, board, ChessMove)
 
@@ -52,6 +50,7 @@ def generate_king_moves(board: Board, coords: tuple, _: bool) -> List[ChessMove]
     return bitboard_to_moves(bitboard, coords, board, ChessMove)
 
 def generate_pawn_moves(board: Board, coords: tuple, only_captures: bool) -> List[ChessMove]:
+    print_bitboard(board.pins)
     moves: List[ChessMove] = []
 
     direction: int = -1 if is_white_piece(board[coords]) else 1
@@ -84,8 +83,6 @@ def generate_pawn_moves(board: Board, coords: tuple, only_captures: bool) -> Lis
             if capture_target == board.ep_square[0]:
                 bitboard |= 1 << square_to_index(*capture_target)
 
-    print_bitboard(bitboard)
-    print_bitboard(board.pins)
     bitboard = filter_piece_moves(board, coords, bitboard)
     return bitboard_to_pawn_moves(bitboard, coords, board, ChessMove, is_white_piece(board[coords]))
 

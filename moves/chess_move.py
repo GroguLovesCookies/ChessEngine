@@ -88,7 +88,6 @@ class ChessMove(Move):
             self.board[self.end] = chess_pieces["n"] | get_piece_color(self.piece_moved)
             bitboard[chess_pieces["n"]] ^= 1 << square_to_index(*self.end)
         elif self.move_type == ChessMove.MT_DOUBLE_PUSH:
-            print("HI!")
             offset: int = 1 if self.is_white_move else -1
             self.board.ep_square = ((self.end[0], self.end[1] + offset), self.end)
         elif self.move_type == ChessMove.MT_EN_PASSANT:
@@ -107,6 +106,7 @@ class ChessMove(Move):
             elif self.start[0] == 7:
                 self.board.castling[1 if self.is_white_move else 3] = False
         self.board.reload_attacked()
+        self.board.reset_rights()
 
 
     def undo_move(self):

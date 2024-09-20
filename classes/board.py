@@ -3,7 +3,7 @@ from pieces import chess_pieces
 
 
 class Board:
-    def __init__(self, generator, width=8, height=8):
+    def __init__(self, generator, generate_map, width=8, height=8):
         self.width = width
         self.height = height
         self.board = [[0 for _ in range(width)] for _ in range(height)]
@@ -13,14 +13,18 @@ class Board:
         self.white = True
         self.pins = 0
         self.pin_rays = [0 for _ in range(8)]
+        self.generate_map = generate_map
 
         self.generator = generator(self)
 
         self.ep_stack = []
         self.castle_stack = []
 
-        self.attacked_squares = set()
+        self.attacked_squares = 0
         self.pinned_pieces = {}
+
+        self.checked = False
+        self.double_check = False
 
         self.kings = [(0, 0), (0, 0)]
         self.white_bitboards = {piece: 0 for piece in chess_pieces.values()}
@@ -52,7 +56,10 @@ class Board:
         return bitboards[chess_pieces["q"]] | bitboards[chess_pieces["b"]]
 
     def reload_attacked(self):
-        ...# self.attacked_squares = set([i.end for i in self.generator.generate(not self.white, False, True)])
+        self.attacked_squares = self.generate_map(self, not self.white)
+        king_bitboard = self.get_bitboard(self.white)[chess_pieces["k"]]
+        if self.attacked_squares & king_bitboard > 0:
+            self.checked = True
 
     def reload_pinned(self):
         offsets = [(1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1), (1, -1)]

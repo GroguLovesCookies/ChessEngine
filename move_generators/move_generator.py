@@ -24,7 +24,7 @@ class MoveGenerator:
                     moves.extend(self.generators[get_piece_value(piece)](self.board, (x, y), only_captures))
                 x += 1
             y += 1
-        return moves if not do_filter else self.filter_legal_moves(moves)
+        return moves if not self.board.checked else self.filter_legal_moves(moves)
 
     def pre_generate(self):
         ...

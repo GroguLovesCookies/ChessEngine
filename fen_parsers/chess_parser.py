@@ -1,12 +1,12 @@
 from classes.board import Board
 from fen_parsers.fen_parser import FenParser
-from move_generators.chess_move_generator import ChessMoveGenerator
+from move_generators.chess_move_generator import ChessMoveGenerator, generate_attack_map
 from pieces import get_piece_value, is_white_piece, chess_pieces
 
 
 class ChessParser(FenParser):
     def load(self, fen: str) -> Board:
-        board = Board(ChessMoveGenerator, self.width, self.height)
+        board = Board(ChessMoveGenerator, generate_attack_map, self.width, self.height)
 
         i = 0
         for char in fen:

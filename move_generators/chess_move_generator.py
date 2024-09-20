@@ -7,9 +7,16 @@ from pieces import chess_pieces, get_piece_value, is_white_piece, is_same_color,
     is_orthogonal_piece
 from typing import List
 
-from utils import print_bitboard, square_to_index, bitboard_to_moves, bitboard_to_pawn_moves, any_in_list
+from utils import print_bitboard, square_to_index, bitboard_to_moves, bitboard_to_pawn_moves, any_in_list, \
+    index_to_square
 
 offsets = [(1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1), (1, -1)]
+ks_castle = 0b00000110
+qs_castle = 0b01110000
+castle_king = 0b00001000
+ks_castle_rook = 0b00000001
+qs_castle_rook = 0b10000000
+
 def generate_sliding_map(board: Board, coords: tuple):
     out = 0
     pieces = []
@@ -25,7 +32,6 @@ def generate_sliding_map(board: Board, coords: tuple):
         blockers &= mask
         bitboard = board.white_bitboard if is_white_piece(board[coords]) else board.black_bitboard
         moves_bitboard = lookup_table["moves"][str(i)][str(blockers)]
-        moves_bitboard &= ~bitboard
         out |= moves_bitboard
     return out
 
@@ -36,6 +42,8 @@ def generate_piece_map(board: Board, coords: tuple, lookup: dict):
 
 def generate_sliding_moves(board: Board, coords: tuple, only_captures: bool, collide: bool = True) -> List[ChessMove]:
     out = generate_sliding_map(board, coords)
+    bitboard = board.white_bitboard if is_white_piece(board[coords]) else board.black_bitboard
+    out &= ~bitboard
     out = filter_piece_moves(board, coords, out)
     return bitboard_to_moves(out, coords, board, ChessMove)
 
@@ -48,9 +56,33 @@ def generate_knight_moves(board: Board, coords: tuple, _: bool) -> List[ChessMov
 
 def generate_king_moves(board: Board, coords: tuple, _: bool) -> List[ChessMove]:
     mask = generate_piece_map(board, coords, board.generator.king_lookup)
-    bitboard = mask & ~(board.white_bitboard if is_white_piece(board[coords]) else board.black_bitboard)
+    white = is_white_piece(board[coords])
+    colour_bitboard = board.white_bitboard if white else board.black_bitboard
+    bitboard = mask & ~colour_bitboard
     bitboard &= ~board.attacked_squares
-    return bitboard_to_moves(bitboard, coords, board, ChessMove)
+
+    moves = bitboard_to_moves(bitboard, coords, board, ChessMove)
+    if board.checked:
+        return moves
+
+    offset = 0 if white else 56
+    blockers = board.attacked_squares | colour_bitboard
+    if board.castling[0 if white else 2]:
+        ks_castle_mask = ks_castle << offset
+        ks_castle_rook_mask = ks_castle_rook << offset
+
+        if blockers & ks_castle_mask == 0 and ks_castle_rook_mask & board.get_bitboard(white)[chess_pieces["r"]] > 0:
+            moves.append(ChessMove(board, coords, index_to_square(square_to_index(*coords) - 2), ChessMove.MT_CASTLE_SHORT))
+    if board.castling[1 if white else 3]:
+        qs_castle_mask = qs_castle << offset
+        qs_castle_rook_mask = qs_castle_rook << offset
+
+        if blockers & qs_castle_mask == 0 and qs_castle_rook_mask & board.get_bitboard(white)[chess_pieces["r"]] > 0:
+            moves.append(ChessMove(board, coords, index_to_square(square_to_index(*coords) + 2), ChessMove.MT_CASTLE_LONG))
+
+
+
+    return moves
 
 def generate_pawn_moves(board: Board, coords: tuple, only_captures: bool) -> List[ChessMove]:
     direction: int = -1 if is_white_piece(board[coords]) else 1

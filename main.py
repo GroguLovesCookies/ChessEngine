@@ -6,7 +6,7 @@ from pieces import chess_pieces
 from utils import print_bitboard
 
 parser = ChessParser()
-board = parser.load("rnbqkbnr/1ppppppp/8/1P1R4/4B3/1p6/P7/K6r")
+board = parser.load("r3k2r/pppppppp/8/8/8/8/PPPPPnPP/R111K2R")
 
 
 print_bitboard(board.attacked_squares)
